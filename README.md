@@ -4,10 +4,14 @@ This project demonstrates a basic Hardhat use case. It comes with a sample contr
 
 Try running some of the following tasks:
 
-```shell
+```
 npx hardhat help
 npx hardhat test
-REPORT_GAS=true npx hardhat test
+npx hardhat run scripts/deploy.js --network localhost
 npx hardhat node
-npx hardhat ignition deploy ./ignition/modules/Lock.js
+```
+And React frontend on:
+
+```
+npm run dev
 ```
