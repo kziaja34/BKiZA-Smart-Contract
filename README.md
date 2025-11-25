@@ -23,5 +23,6 @@ npx hardhat node
 And React frontend on:
 
 ```
+npm install -D vite
 npm run dev
 ```
