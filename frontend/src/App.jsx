@@ -1,14 +1,23 @@
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ethers } from "ethers";
+
+import Home from "./components/Home";
+import Lista from "./components/Lista";
+import Dodaj from "./components/Dodaj";
+import Szczegoly from "./components/Szczegoly";
+
 import { contractABI, contractAddress } from "./contract";
 
 function App() {
   const [account, setAccount] = useState(null);
-  const [joke, setJoke] = useState("");
+  const [view, setView] = useState("home");
+  const [selectedId, setSelectedId] = useState(null);
 
   const providerRef = useRef(null);
   const signerRef = useRef(null);
   const contractRef = useRef(null);
+
+  // ------------------- Synchronizacja portfela -------------------
 
   const connectWallet = async () => {
     if (!window.ethereum) {
@@ -17,15 +26,8 @@ function App() {
     }
 
     providerRef.current = new ethers.BrowserProvider(window.ethereum);
-    const network = await providerRef.current.getNetwork();
-
-    if (network.chainId !== BigInt(1337)) {
-      alert("Użyj sieci Hardhat (chainId 1337)");
-      return;
-    }
-
     const accounts = await window.ethereum.request({
-      method: "eth_requestAccounts",
+      method: "eth_requestAccounts"
     });
 
     setAccount(accounts[0]);
@@ -36,44 +38,59 @@ function App() {
       contractABI,
       signerRef.current
     );
-
-    console.log("Kontrakt podłączony:", contractRef.current);
   };
 
-  const getRandomJoke = async () => {
-    if (!contractRef.current) {
-      alert("Połącz portfel!");
-      return;
+  // automatyczne przechwycenie istniejącego połączenia
+  useEffect(() => {
+    if (window.ethereum) {
+      window.ethereum.request({ method: "eth_accounts" }).then((accounts) => {
+        if (accounts.length > 0) {
+          connectWallet();
+        }
+      });
+
+      // zmiana konta
+      window.ethereum.on("accountsChanged", (accounts) => {
+        setAccount(accounts[0]);
+      });
+
+      // zmiana sieci
+      window.ethereum.on("chainChanged", () => window.location.reload());
     }
+  }, []);
 
-    const total = Number(await contractRef.current.licznikDowcipow());
-    if (total === 0) {
-      setJoke("Brak dowcipów w kontrakcie!");
-      return;
-    }
-
-    const randomId = Math.floor(Math.random() * total) + 1;
-    const jokeData = await contractRef.current.pobierzDowcip(randomId);
-
-    setJoke(jokeData[1]);
-  };
+  // ------------------- Render paneli -------------------
 
   return (
-    <div style={{ padding: 40, fontFamily: "sans-serif" }}>
-      <h1>Dowcipy — Web3 (losowanie po stronie frontu)</h1>
+    <div style={{ padding: 40 }}>
+      <h1>📝 Tablica Ogłoszeń Web3 (z licytacją)</h1>
 
-      {!account && (
-        <button onClick={connectWallet}>Połącz z MetaMask</button>
+      <hr />
+
+      {view === "home" && (
+        <Home setView={setView} connectWallet={connectWallet} account={account} />
       )}
 
-      {account && (
-        <>
-          <p>Połączono jako: {account}</p>
+      {view === "lista" && (
+        <Lista setView={setView} setSelectedId={setSelectedId} contractRef={contractRef} />
+      )}
 
-          <button onClick={getRandomJoke}>Wylosuj dowcip</button>
+      {view === "dodaj" && (
+        <Dodaj
+          setView={setView}
+          connectWallet={connectWallet}
+          account={account}
+          contractRef={contractRef}
+        />
+      )}
 
-          <h3 style={{ marginTop: 20 }}>{joke}</h3>
-        </>
+      {view === "szczegoly" && (
+        <Szczegoly
+          id={selectedId}
+          setView={setView}
+          contractRef={contractRef}
+          account={account}
+        />
       )}
     </div>
   );
