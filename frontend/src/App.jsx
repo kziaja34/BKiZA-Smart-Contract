@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { ethers } from "ethers";
-
 import Home from "./components/Home";
 import Lista from "./components/Lista";
 import Dodaj from "./components/Dodaj";
@@ -16,8 +15,6 @@ function App() {
   const providerRef = useRef(null);
   const signerRef = useRef(null);
   const contractRef = useRef(null);
-
-  // ------------------- Synchronizacja portfela -------------------
 
   const connectWallet = async () => {
     if (!window.ethereum) {
@@ -40,7 +37,6 @@ function App() {
     );
   };
 
-  // automatyczne przechwycenie istniejącego połączenia
   useEffect(() => {
     if (window.ethereum) {
       window.ethereum.request({ method: "eth_accounts" }).then((accounts) => {
@@ -49,17 +45,13 @@ function App() {
         }
       });
 
-      // zmiana konta
       window.ethereum.on("accountsChanged", (accounts) => {
         setAccount(accounts[0]);
       });
 
-      // zmiana sieci
       window.ethereum.on("chainChanged", () => window.location.reload());
     }
   }, []);
-
-  // ------------------- Render paneli -------------------
 
   return (
     <div style={{ padding: 40 }}>
