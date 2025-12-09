@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ethers } from "ethers";
+import 'bootstrap/dist/css/bootstrap.min.css';
 import Home from "./components/Home";
 import Lista from "./components/Lista";
 import Dodaj from "./components/Dodaj";
@@ -54,36 +55,55 @@ function App() {
   }, []);
 
   return (
-    <div style={{ padding: 40 }}>
-      <h1>📝 Tablica Ogłoszeń Web3 (z licytacją)</h1>
+    <div className="d-flex flex-column min-vh-100">
+      
+      <nav className="navbar navbar-dark bg-dark shadow-sm">
+        <div className="container-fluid justify-content-center">
+          <span 
+            className="navbar-brand mb-0 h1 fw-bold" 
+            onClick={() => setView("home")}
+            style={{ cursor: "pointer" }}
+            title="Wróć do strony głównej"
+          >
+            📝 Tablica Ogłoszeń Web3
+          </span>
+        </div>
+      </nav>
 
-      <hr />
+      <div className="flex-grow-1 d-flex flex-column">
+        
+        {view === "home" && (
+          <Home setView={setView} connectWallet={connectWallet} account={account} />
+        )}
 
-      {view === "home" && (
-        <Home setView={setView} connectWallet={connectWallet} account={account} />
-      )}
+        {view === "lista" && (
+          <div className="container py-4 w-100">
+             <Lista setView={setView} setSelectedId={setSelectedId} contractRef={contractRef} />
+          </div>
+        )}
 
-      {view === "lista" && (
-        <Lista setView={setView} setSelectedId={setSelectedId} contractRef={contractRef} />
-      )}
+        {view === "dodaj" && (
+          <div className="container py-4 w-100">
+            <Dodaj
+              setView={setView}
+              connectWallet={connectWallet}
+              account={account}
+              contractRef={contractRef}
+            />
+          </div>
+        )}
 
-      {view === "dodaj" && (
-        <Dodaj
-          setView={setView}
-          connectWallet={connectWallet}
-          account={account}
-          contractRef={contractRef}
-        />
-      )}
-
-      {view === "szczegoly" && (
-        <Szczegoly
-          id={selectedId}
-          setView={setView}
-          contractRef={contractRef}
-          account={account}
-        />
-      )}
+        {view === "szczegoly" && (
+          <div className="container py-4 w-100">
+            <Szczegoly
+              id={selectedId}
+              setView={setView}
+              contractRef={contractRef}
+              account={account}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

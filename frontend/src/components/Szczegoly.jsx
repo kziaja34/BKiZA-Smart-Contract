@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ethers } from "ethers"; // Dodałem import, bo był potrzebny do formatEther
+import { ethers } from "ethers";
 
 export default function Szczegoly({ id, setView, contractRef, account }) {
   const [item, setItem] = useState(null);
@@ -9,11 +9,8 @@ export default function Szczegoly({ id, setView, contractRef, account }) {
 
   const load = async () => {
     try {
-      // Pobieramy dane z nowego kontraktu (zwraca teraz 6 wartości)
       const og = await contractRef.current.pobierz(id);
       
-      // Konwersja BigInt deadline na datę JS
-      // og[5] to timestamp w sekundach, JS potrzebuje milisekund (* 1000)
       const deadlineTimestamp = Number(og[5]);
       const dataKonca = new Date(deadlineTimestamp * 1000);
       const czyZakonczona = Date.now() > dataKonca.getTime();
@@ -21,7 +18,7 @@ export default function Szczegoly({ id, setView, contractRef, account }) {
       setItem({
         autor: og[0],
         tresc: og[1],
-        highestBid: og[2], // BigInt
+        highestBid: og[2], 
         highestBidder: og[3],
         minimalnaKwota: ethers.formatEther(og[4]),
         deadline: deadlineTimestamp,
@@ -31,7 +28,7 @@ export default function Szczegoly({ id, setView, contractRef, account }) {
 
       if (account) {
           const zwrot = await contractRef.current.oczekujaceZwroty(account);
-          setPendingReturn(ethers.formatEther(zwrot)); // Formatujemy na czytelne ETH
+          setPendingReturn(ethers.formatEther(zwrot)); 
       }
     } catch (error) {
       console.error("Błąd ładowania szczegółów:", error);
@@ -69,7 +66,7 @@ export default function Szczegoly({ id, setView, contractRef, account }) {
       const tx = await contractRef.current.wyplacWygrana(id);
       await tx.wait();
       alert("Wypłacono środki i zamknięto aukcję!");
-      setView("lista"); // Wracamy do listy, bo aukcja znika (zostaje usunięta ze stanu)
+      setView("lista"); 
     } catch (error) {
       console.error(error);
       if (error.message.includes("Nie jestes autorem")) {
@@ -98,81 +95,131 @@ export default function Szczegoly({ id, setView, contractRef, account }) {
 
   useEffect(() => {
     load();
-    // Opcjonalnie: odświeżanie statusu co minutę, żeby zaktualizować "czy zakończona"
     const interval = setInterval(load, 60000);
     return () => clearInterval(interval);
   }, [account, id]);
 
-  if (!item) return <div>Ładowanie danych z blockchaina...</div>;
+  if (!item) return (
+    <div className="text-center py-5">
+      <div className="spinner-border text-primary" role="status"></div>
+      <p className="mt-2 text-muted">Ładowanie szczegółów aukcji...</p>
+    </div>
+  );
 
   return (
-    <div>
-      <button onClick={() => setView("lista")}>⬅ Powrót</button>
+    <div className="d-flex justify-content-center w-100">
+      <div className="container" style={{ maxWidth: '800px' }}>
+        
+        <div className="card shadow-lg border-0 rounded-3 overflow-hidden">
+          
+          <div className="card-header bg-white border-bottom pt-4 pb-3 px-4 d-flex justify-content-between align-items-center">
+            <div>
+              <h4 className="fw-bold mb-1">🔍 Aukcja #{id}</h4>
+              <span className="text-muted small font-monospace">Autor: {item.autor.slice(0,6)}...{item.autor.slice(-4)}</span>
+            </div>
+            <button 
+              onClick={() => setView("lista")} 
+              className="btn btn-outline-secondary rounded-pill px-3 btn-sm"
+            >
+              ⬅ Wróć do listy
+            </button>
+          </div>
 
-      <h2>Ogłoszenie #{id}</h2>
-      
-      {/* NOWE: Wyświetlanie czasu */}
-      <div style={{ border: "1px solid #ccc", padding: "10px", marginBottom: "10px" }}>
-          <p><b>Koniec aukcji:</b> {item.dataKoncaString}</p>
-          {item.czyZakonczona ? (
-              <p style={{ color: "red", fontWeight: "bold" }}>AUKCJA ZAKOŃCZONA</p>
-          ) : (
-              <p style={{ color: "green", fontWeight: "bold" }}>TRWA LICYTACJA</p>
-          )}
-      </div>
+          <div className="card-body p-4">
+            
+            <div className={`alert ${item.czyZakonczona ? 'alert-danger' : 'alert-success'} d-flex justify-content-between align-items-center shadow-sm`}>
+              <div>
+                <strong>Status: </strong> 
+                {item.czyZakonczona ? 'ZAKOŃCZONA 🔒' : 'TRWA LICYTACJA 🟢'}
+              </div>
+              <div className="text-end">
+                <small>Koniec:</small><br/>
+                <strong>{item.dataKoncaString}</strong>
+              </div>
+            </div>
 
-      <p><b>Treść:</b> {item.tresc}</p>
-      <p><b>Autor:</b> {item.autor}</p>
-      <p><b>Cena minimalna:</b> {item.minimalnaKwota} ETH</p>
-      <p>
-        <b>Aktualna najwyższa oferta:</b> {ethers.formatEther(item.highestBid)} ETH <br />
-        <b>Najwyższy licytant:</b> {item.highestBidder === ethers.ZeroAddress ? "Brak ofert" : item.highestBidder}
-      </p>
+            <div className="mb-4">
+              <label className="text-muted small fw-bold text-uppercase">Treść ogłoszenia</label>
+              <p className="fs-5 mt-1">{item.tresc}</p>
+            </div>
 
-      <hr />
+            <div className="row g-3 mb-4">
+              <div className="col-md-6">
+                <div className="p-3 bg-light rounded-3 border">
+                  <small className="text-muted d-block mb-1">Cena minimalna</small>
+                  <span className="fw-bold fs-5 text-dark">{item.minimalnaKwota} ETH</span>
+                </div>
+              </div>
+              <div className="col-md-6">
+                <div className="p-3 bg-light rounded-3 border border-primary bg-opacity-10">
+                  <small className="text-primary d-block mb-1">Aktualna najwyższa oferta 🏆</small>
+                  <span className="fw-bold fs-4 text-primary">{ethers.formatEther(item.highestBid)} ETH</span>
+                  <div className="small text-muted mt-1 font-monospace">
+                    Licytant: {item.highestBidder === ethers.ZeroAddress ? "Brak ofert" : `${item.highestBidder.slice(0,6)}...${item.highestBidder.slice(-4)}`}
+                  </div>
+                </div>
+              </div>
+            </div>
 
-      {/* SEKCJA LICYTACJI (Tylko dla innych i gdy trwa) */}
-      {item.autor.toLowerCase() !== account?.toLowerCase() && (
-        <>
-          <h3>Zalicytuj</h3>
-          {!item.czyZakonczona ? (
-              <>
-                <input
-                    type="text"
-                    value={bid}
-                    onChange={(e) => setBid(e.target.value)}
-                    placeholder="Kwota ETH"
-                />
-                <button onClick={zalicytuj}>Wyślij ofertę</button>
-              </>
-          ) : (
-              <p>Licytacja została zamknięta.</p>
-          )}
-        </>
-      )}
+            <hr className="my-4"/>
 
-      {/* SEKCJA AUTORA (Wypłata tylko po czasie) */}
-      {account?.toLowerCase() === item.autor.toLowerCase() && (
-        <>
-          <h3>Panel Autora</h3>
-          {item.czyZakonczona ? (
-             <button onClick={wyplac}>Wypłać najwyższą ofertę i zamknij</button>
-          ) : (
-             <p>Będziesz mógł wypłacić środki po: {item.dataKoncaString}</p>
-          )}
-        </>
-      )}
+            {item.autor.toLowerCase() !== account?.toLowerCase() && (
+              <div className="mb-3">
+                <h5 className="fw-bold mb-3">💰 Złóż ofertę</h5>
+                {!item.czyZakonczona ? (
+                   <div className="input-group input-group-lg">
+                      <input
+                          type="number"
+                          className="form-control"
+                          value={bid}
+                          onChange={(e) => setBid(e.target.value)}
+                          placeholder="Kwota ETH"
+                          step="0.001"
+                      />
+                      <span className="input-group-text">ETH</span>
+                      <button onClick={zalicytuj} className="btn btn-primary px-4 fw-bold">
+                        Przebij ofertę 🚀
+                      </button>
+                   </div>
+                ) : (
+                    <div className="alert alert-secondary">Licytacja została zamknięta. Nie można już składać ofert.</div>
+                )}
+              </div>
+            )}
 
-      <hr />
+            {account?.toLowerCase() === item.autor.toLowerCase() && (
+              <div className="mb-3 p-3 border border-warning rounded-3 bg-warning bg-opacity-10">
+                <h5 className="fw-bold text-dark">🛠 Panel Autora</h5>
+                {item.czyZakonczona ? (
+                   <div>
+                     <p className="mb-2">Aukcja zakończona. Możesz wypłacić środki.</p>
+                     <button onClick={wyplac} className="btn btn-warning text-dark fw-bold w-100">
+                       💸 Wypłać najwyższą ofertę i zamknij
+                     </button>
+                   </div>
+                ) : (
+                   <p className="mb-0 text-muted">Aukcja trwa. Będziesz mógł wypłacić środki po: <b>{item.dataKoncaString}</b></p>
+                )}
+              </div>
+            )}
 
-      {/* SEKCJA ZWROTÓW (Dla przegranych) */}
-      {!hasReceivedFunds && parseFloat(pendingReturn) > 0 && (
-        <div style={{backgroundColor: "#f0f0f0", padding: "10px", marginTop: "20px"}}>
-          <h3>Twoje środki do odebrania (z przebitych ofert)</h3>
-          <p>Kwota: {pendingReturn} ETH</p>
-          <button onClick={odbierzZwrot}>Odbierz zwrot na portfel</button>
+            {!hasReceivedFunds && parseFloat(pendingReturn) > 0 && (
+              <div className="mt-4 alert alert-warning shadow-sm border-warning">
+                <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                  <div>
+                    <h5 className="alert-heading fw-bold mb-1">💵 Zwrot środków!</h5>
+                    <p className="mb-0">Ktoś przebił Twoją ofertę. Masz do odebrania: <strong>{pendingReturn} ETH</strong></p>
+                  </div>
+                  <button onClick={odbierzZwrot} className="btn btn-dark fw-bold">
+                    Odbierz zwrot na portfel
+                  </button>
+                </div>
+              </div>
+            )}
+
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

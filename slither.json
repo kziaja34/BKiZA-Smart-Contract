@@ -1,0 +1,47 @@
+{
+  "success": true,
+  "error": null,
+  "results": {
+    "detectors": [
+      {
+        "elements": [
+          {
+            "type": "pragma",
+            "name": ">=0.8.13<0.8.20",
+            "source_mapping": {
+              "start": 33,
+              "length": 33,
+              "filename_relative": "contracts/TablicaAukcyjna.sol",
+              "filename_absolute": "P:/Repo/BKiZA-Smart-Contract/contracts/TablicaAukcyjna.sol",
+              "filename_short": "contracts/TablicaAukcyjna.sol",
+              "is_dependency": false,
+              "lines": [
+                2
+              ],
+              "starting_column": 1,
+              "ending_column": 34
+            },
+            "type_specific_fields": {
+              "directive": [
+                "solidity",
+                ">=",
+                "0.8",
+                ".13",
+                "<",
+                "0.8",
+                ".20"
+              ]
+            }
+          }
+        ],
+        "description": "Version constraint >=0.8.13<0.8.20 is too complex.\nIt is used by:\n\t- >=0.8.13<0.8.20 (contracts/TablicaAukcyjna.sol#2)\n",
+        "markdown": "Version constraint >=0.8.13<0.8.20 is too complex.\nIt is used by:\n\t- [>=0.8.13<0.8.20](contracts/TablicaAukcyjna.sol#L2)\n",
+        "first_markdown_element": "contracts/TablicaAukcyjna.sol#L2",
+        "id": "9e6ba42280372c2d9cab83d1f0f2cc65dcff61cdfd8091cbee0b52b1c68aa9c2",
+        "check": "solc-version",
+        "impact": "Informational",
+        "confidence": "High"
+      }
+    ]
+  }
+}
