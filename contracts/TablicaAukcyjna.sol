@@ -82,7 +82,9 @@ contract TablicaAukcyjna {
         require(kwota > 0, "Brak srodkow do zwrotu");
 
         oczekujaceZwroty[msg.sender] = 0;
-        payable(msg.sender).transfer(kwota);
+
+        (bool ok, ) = payable(msg.sender).call{value: kwota}("");
+        require(ok, "Zwrot srodkow nie powiodl sie");
     }
 
     function pobierz(uint id)
