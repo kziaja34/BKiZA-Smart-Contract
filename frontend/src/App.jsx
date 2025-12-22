@@ -73,7 +73,12 @@ function App() {
       <div className="flex-grow-1 d-flex flex-column">
         
         {view === "home" && (
-          <Home setView={setView} connectWallet={connectWallet} account={account} />
+          <Home 
+             setView={setView} 
+             connectWallet={connectWallet} 
+             account={account} 
+             contractRef={contractRef}
+          />
         )}
 
         {view === "lista" && (
@@ -103,6 +108,8 @@ function App() {
             />
           </div>
         )}
+
+        
       </div>
     </div>
   );
