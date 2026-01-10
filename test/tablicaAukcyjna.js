@@ -2,17 +2,24 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
-
+// "describe" grupuje testy - główny blok dla kontraktu "TablicaAukcyjna".
 describe("TablicaAukcyjna", function () {
   let Tablica, instance;
   let owner, user1, user2;
 
   beforeEach(async function () {
-    [owner, user1, user2] = await ethers.getSigners();
-    Tablica = await ethers.getContractFactory("TablicaAukcyjna");
-    instance = await Tablica.deploy();
-    await instance.waitForDeployment();
-  });
+      // Pobieramy testowe portfele (adresy) - pierwszy to zazwyczaj domyślny właściciel (owner)
+      [owner, user1, user2] = await ethers.getSigners();
+      
+      // Pobieramy fabrykę kontraktu o nazwie "TablicaAukcyjna"
+      Tablica = await ethers.getContractFactory("TablicaAukcyjna");
+      
+      // Wdrażamy (deploy) kontrakt do wirtualnej sieci testowej
+      instance = await Tablica.deploy();
+      
+      // Czekamy, aż kontrakt zostanie poprawnie wdrożony
+      await instance.waitForDeployment();
+    });
 
   // ---------------------------------------------------------
   // 1. DODAWANIE OGŁOSZEŃ
@@ -23,6 +30,8 @@ describe("TablicaAukcyjna", function () {
 
     expect(await instance.licznik()).to.equal(1);
 
+    // Parsujemy logi (Eventy) wyemitowane przez transakcję, aby sprawdzić czy Event zawiera poprawne dane
+    // Używamy event żeby sprawdzić, czy event 'NoweOgloszenie' został poprawnie wyemitowany
     const event = instance.interface.parseLog(receipt.logs[0]);
     expect(event.args.id).to.equal(1);
     expect(event.args.autor).to.equal(owner.address);
@@ -30,6 +39,7 @@ describe("TablicaAukcyjna", function () {
   });
 
   it("Nie powinno pozwolić na dodanie ogłoszenia z pustą treścią", async function () {
+    // Oczekujemy, że transakcja się nie uda z konkretnym komunikatem błędu
     await expect(instance.dodajOgloszenie("", 100, 60))
       .to.be.revertedWith("Tresc nie moze byc pusta");
   });
@@ -126,11 +136,21 @@ describe("TablicaAukcyjna", function () {
     const balansPrzed = await ethers.provider.getBalance(owner.address);
 
     const tx = await instance.wyplacWygrana(1);
+
+    // Czekamy na "paragon" (receipt) za transakcję
     const receipt = await tx.wait();
+
+    // Obliczamy koszt gazu
+    // gasUsed = ile jednostek gazu zużyto
+    // gasPrice = cena za jednostkę gazu
     const gas = receipt.gasUsed * receipt.gasPrice;
 
+    // Sprawdzamy saldo
+    // BalansPo = BalansPrzed + Zysk - KosztGazu
     const balansPo = await ethers.provider.getBalance(owner.address);
 
+    // Sprawdzamy, czy balans po jest bliski oczekiwanemu (z tolerancją 5n)
+    // Odejmujemy koszt gazu, bo to zmienna zależna od sieci
     expect(balansPo).to.be.closeTo(balansPrzed + 400n - gas, 5n);
 
     const og = await instance.pobierz(1);
@@ -163,6 +183,7 @@ describe("TablicaAukcyjna", function () {
 
     const balansPo = await ethers.provider.getBalance(user1.address);
 
+    // Sprawdzamy, czy balans po jest bliski oczekiwanemu (z tolerancją 5n)
     expect(balansPo).to.be.closeTo(balansPrzed + 200n - gas, 5n);
   });
 
@@ -177,6 +198,8 @@ describe("TablicaAukcyjna", function () {
   // ---------------------------------------------------------
   it("pobierz() powinno zwracać poprawne dane ogłoszenia", async function () {
     await instance.dodajOgloszenie("Rower", 123, 60);
+
+    // Używamy og żeby sprawdzić czy pobrane dane są poprawne - tylko pobieramy, nie wprowadzamy zmian na blockchainie
     const og = await instance.pobierz(1);
 
     expect(og.autor).to.equal(owner.address);
